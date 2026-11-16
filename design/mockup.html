@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>TodayChecklist — giao diện minh họa</title>
+<style>
+  :root {
+    --canvas: #f4f0e8;
+    --ink: #23211d;
+    --window-radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    width: 1440px;
+    min-height: 760px;
+    padding: 28px 40px 36px;
+    background: var(--canvas);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    zoom: 1.9;
+  }
+  .caption {
+    margin: 0 0 12px 4px;
+    font: 600 15px/1.3 Georgia, "Times New Roman", serif;
+    letter-spacing: .1px;
+    color: #2a2722;
+  }
+  .row { display: flex; gap: 40px; align-items: flex-start; }
+  .col { width: 400px; }
+  .window {
+    width: 400px;
+    height: 620px;
+    border: 1px solid #b9b3a8;
+    border-radius: var(--window-radius);
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 0 rgba(0,0,0,.03);
+  }
+  .titlebar {
+    height: 30px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .titlebar .appicon {
+    width: 13px; height: 13px;
+    border: 1.4px solid var(--muted);
+    border-radius: 2px;
+    position: relative;
+  }
+  .titlebar .appicon::after {
+    content: "";
+    position: absolute; left: 3px; right: 3px; top: 4px;
+    height: 1.4px; background: var(--muted); box-shadow: 0 3px 0 var(--muted);
+  }
+  .wincontrols { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .wincontrols i {
+    display: block; width: 10px; height: 1.3px; background: var(--muted);
+  }
+  .wincontrols .sq { width: 9px; height: 9px; border: 1.3px solid var(--muted); background: transparent; }
+  .wincontrols .x { width: 11px; height: 11px; position: relative; background: transparent; }
+  .wincontrols .x::before, .wincontrols .x::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 1.3px; background: var(--muted);
+  }
+  .wincontrols .x::before { transform: rotate(45deg); }
+  .wincontrols .x::after { transform: rotate(-45deg); }
+
+  .app { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .header { padding: 15px 18px 0; }
+  .title { font: 600 27px/1.05 Georgia, "Times New Roman", serif; letter-spacing: -.3px; margin: 0; }
+  .meta {
+    margin-top: 6px;
+    display: flex; align-items: center; gap: 6px;
+    color: var(--muted); font-size: 11.5px;
+  }
+  .meta .notes { margin-left: 0; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+  .nav {
+    position: relative;
+    height: 26px;
+    margin-top: -22px;
+    display: flex; justify-content: flex-end; align-items: center; gap: 9px;
+    color: var(--muted);
+  }
+  .nav .today { color: var(--accent); font-size: 11px; margin-right: 1px; }
+  .ico { width: 17px; height: 17px; display: inline-block; vertical-align: -4px; }
+  .ico svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .progress {
+    margin: 12px 0 9px;
+    height: 17px;
+    position: relative;
+  }
+  .progress .track { position: absolute; left: 0; right: 0; top: 3px; height: 3px; background: var(--line); }
+  .progress .fill { position: absolute; left: 0; top: 3px; height: 3px; width: var(--pct); background: var(--accent); }
+  .progress .count { position: absolute; right: 0; top: -1px; font-size: 10.5px; color: var(--muted); }
+  .add {
+    display: flex; align-items: center; gap: 8px;
+    height: 34px;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted); font-size: 12.5px;
+  }
+  .add .plus { font-size: 18px; line-height: 1; font-weight: 300; }
+  .list { flex: 1; min-height: 0; padding: 5px 8px 0; overflow: hidden; }
+  .item {
+    height: 29px;
+    display: flex; align-items: center;
+    border-radius: 5px;
+    padding-right: 6px;
+    color: var(--text);
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+  .item.selected { background: var(--selected); }
+  .indent1 { padding-left: 22px; }
+  .indent2 { padding-left: 44px; }
+  .chev { width: 15px; flex: none; color: var(--muted); display: flex; justify-content: center; }
+  .check {
+    width: 15px; height: 15px; flex: none; margin: 0 7px 0 3px;
+    border: 1.5px solid var(--border);
+    border-radius: 4.5px;
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .check.on { background: var(--muted); border-color: var(--muted); }
+  .check.on::after {
+    content: ""; width: 7px; height: 4px;
+    border-left: 1.7px solid var(--bg); border-bottom: 1.7px solid var(--bg);
+    transform: rotate(-45deg) translate(0.5px, -1px);
+  }
+  .pill .check { border-radius: 50%; }
+  .text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .done { color: var(--muted); text-decoration: line-through; }
+  .counter { color: var(--muted); font-size: 10.5px; margin-left: 6px; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; margin-left: 7px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .green { background: #34804c; } .purple { background: #7c5cb8; } .red { background: #ba4232; } .gray { background: #aaa49a; }
+  .dark .green { background: #78b880; } .dark .purple { background: #a68cde; } .dark .red { background: #e27464; } .dark .gray { background: #807a71; }
+  .rowicons { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+  .rowicons span { opacity: .9; }
+  .footer {
+    flex: none; height: 38px;
+    border-top: 1px solid var(--line);
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 12px;
+    color: var(--muted); font-size: 10.5px;
+  }
+  .footer .right { margin-left: auto; display: flex; gap: 13px; align-items: center; }
+  .footer .accent { color: var(--accent); }
+
+  /* light */
+  .light {
+    --bg: #fafafa; --panel: #ffffff; --text: #1e1f23; --muted: #84868d;
+    --line: #e5e5e8; --border: #c4c5ca; --accent: #2f62c8;
+    --field: #f0f0f1; --hover: #f4f4f5; --selected: #e9e9ec;
+  }
+  /* dark */
+  .dark {
+    --bg: #171a1f; --panel: #2e333b; --text: #e2e7ee; --muted: #8e98a6;
+    --line: #2a3038; --border: #525b67; --accent: #4fc1b1;
+    --field: #21252b; --hover: #262c34; --selected: #2b323b;
+  }
+  .settings {
+    --bg: #fafafa; --text: #1e1f23; --muted: #84868d; --line: #e5e5e8;
+    --border: #c4c5ca; --accent: #2f62c8; --field: #f0f0f1; --selected: #e9e9ec;
+  }
+  .settings .app { padding: 16px 18px; }
+  .settings h2 { margin: 0 0 13px; font: 600 18px/1.2 Georgia, serif; }
+  .group { margin: 0 0 8px; color: var(--muted); font-size: 10px; font-weight: 600; text-transform: none; }
+  .setting { display: flex; align-items: center; min-height: 33px; gap: 10px; font-size: 11.5px; }
+  .setting label { width: 74px; flex: none; color: var(--text); }
+  .seg { display: flex; flex: 1; height: 27px; background: var(--field); border-radius: 7px; padding: 2px; gap: 2px; }
+  .seg span {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 10px; border-radius: 5px; white-space: nowrap;
+  }
+  .seg .on { background: #fff; color: var(--text); border: 1px solid var(--line); font-weight: 600; }
+  .swatches { display: flex; align-items: center; gap: 7px; flex: 1; }
+  .sw { width: 22px; height: 22px; border-radius: 6px; border: 2px solid transparent; }
+  .sw.on { border-color: var(--text); box-shadow: inset 0 0 0 2px var(--bg); }
+  .sw.plus { border: 1px solid var(--border); color: var(--muted); display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .settings .donebtn {
+    margin-top: 14px; margin-left: auto;
+    width: 76px; height: 30px; border-radius: 6px;
+    background: var(--text); color: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+  }
+  .note { margin-top: 10px; color: #8a847a; font-size: 11px; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="col">
+      <div class="caption">Mặc định · Trung tính · Bo góc · Mực</div>
+      <div class="window light">
+        <div class="titlebar"><span class="appicon"></span><span>Hôm nay làm gì?</span><span class="wincontrols"><i></i><span class="sq"></span><span class="x"></span></span></div>
+        <div class="app">
+          <div class="header">
+            <h1 class="title">Hôm nay</h1>
+            <div class="meta"><span>Thứ Hai, 16/11/2026</span><span class="notes">▤ Ghi chú</span></div>
+            <div class="nav">
+              <span class="today">Hôm nay</span>
+              <span class="ico"><svg viewBox="0 0 20 20"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg></span>
+              <span class="ico"><svg viewBox="0 0 20 20"><rect x="3.5" y="5" width="13" height="11" rx="1.5"/><path d="M3.5 8.5h13M7 3.5v3M13 3.5v3"/></svg></span>
+              <span class="ico"><svg viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg></span>
+              <span class="ico"><svg viewBox="0 0 20 20"><path d="M10 3.5v9M10 3.5 7.2 6.3M10 3.5l2.8 2.8M5 12.5v3h10v-3"/></svg></span>
+            </div>
+            <div class="progress" style="--pct: 37.5%"><div class="track"></div><div class="fill"></div><div class="count">3/8 xong</div></div>
+          </div>
+          <div class="add" style="margin:0 18px"><span class="plus">+</span><span>Thêm note mới…</span></div>
+          <div class="list">
+            <div class="item selected"><span class="chev"><svg width="12" height="12" viewBox="0 0 20 20"><path d="m5 8 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span class="check"></span><span class="text">Kế hoạch tuần</span><span class="counter">3/5</span><span class="rowicons"><span>↗</span><span>▤</span><span>+</span><span>⌫</span></span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check on"></span><span class="text done">Đọc 30 phút</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check on"></span><span class="text done">Đi bộ buổi sáng</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check"></span><span class="text">Viết nhật ký</span></div>
+            <div class="item"><span class="chev"><svg width="12" height="12" viewBox="0 0 20 20"><path d="m5 8 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span class="check"></span><span class="text">Học tiếng Anh</span><span class="counter">0/2</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check"></span><span class="text">Nghe podcast</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check"></span><span class="text">Ôn 20 từ vựng</span></div>
+            <div class="item"><span class="chev"><svg width="12" height="12" viewBox="0 0 20 20"><path d="m5 8 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span class="check"></span><span class="text">Dự án mẫu</span><span class="counter">0/2</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check"></span><span class="text">#12</span><span class="badge"><span class="dot green"></span>Open</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check"></span><span class="text">#34</span><span class="badge"><span class="dot purple"></span>Merged</span><span class="rowicons" style="margin-left:5px">📎</span></div>
+          </div>
+          <div class="footer"><span class="accent">↩ Lấy việc chưa xong</span><span class="right"><span>↻ Status GitHub</span><span>?</span><span>⚙</span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="caption">Tối · Lạnh · Tròn · Màu nhấn</div>
+      <div class="window dark">
+        <div class="titlebar"><span class="appicon"></span><span>Hôm nay làm gì?</span><span class="wincontrols"><i></i><span class="sq"></span><span class="x"></span></span></div>
+        <div class="app">
+          <div class="header">
+            <h1 class="title">Hôm nay</h1>
+            <div class="meta"><span>Thứ Hai, 16/11/2026</span><span class="notes">▤ Ghi chú</span></div>
+            <div class="nav">
+              <span class="today" style="color:var(--accent)">Hôm nay</span>
+              <span class="ico"><svg viewBox="0 0 20 20"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg></span>
+              <span class="ico"><svg viewBox="0 0 20 20"><rect x="3.5" y="5" width="13" height="11" rx="1.5"/><path d="M3.5 8.5h13M7 3.5v3M13 3.5v3"/></svg></span>
+              <span class="ico"><svg viewBox="0 0 20 20"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg></span>
+              <span class="ico"><svg viewBox="0 0 20 20"><path d="M10 3.5v9M10 3.5 7.2 6.3M10 3.5l2.8 2.8M5 12.5v3h10v-3"/></svg></span>
+            </div>
+            <div class="progress" style="--pct: 37.5%"><div class="track"></div><div class="fill"></div><div class="count">3/8 xong</div></div>
+          </div>
+          <div class="add" style="margin:0 18px"><span class="plus">+</span><span>Thêm note mới…</span></div>
+          <div class="list pill">
+            <div class="item selected"><span class="chev"><svg width="12" height="12" viewBox="0 0 20 20"><path d="m5 8 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span class="check"></span><span class="text">Kế hoạch tuần</span><span class="counter">3/5</span><span class="rowicons"><span>↗</span><span>▤</span><span>+</span><span>⌫</span></span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check on"></span><span class="text done">Đọc 30 phút</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check on"></span><span class="text done">Đi bộ buổi sáng</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check"></span><span class="text">Viết nhật ký</span></div>
+            <div class="item"><span class="chev"><svg width="12" height="12" viewBox="0 0 20 20"><path d="m5 8 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span class="check"></span><span class="text">Học tiếng Anh</span><span class="counter">0/2</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check"></span><span class="text">Nghe podcast</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check"></span><span class="text">Ôn 20 từ vựng</span></div>
+            <div class="item"><span class="chev"><svg width="12" height="12" viewBox="0 0 20 20"><path d="m5 8 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span class="check"></span><span class="text">Dự án mẫu</span><span class="counter">0/2</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check"></span><span class="text">#12</span><span class="badge"><span class="dot green"></span>Open</span></div>
+            <div class="item indent1"><span class="chev"></span><span class="check"></span><span class="text">#34</span><span class="badge"><span class="dot purple"></span>Merged</span><span class="rowicons" style="margin-left:5px">📎</span></div>
+          </div>
+          <div class="footer"><span class="accent">↩ Lấy việc chưa xong</span><span class="right"><span>↻ Status GitHub</span><span>?</span><span>⚙</span></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="caption">Cài đặt</div>
+      <div class="window settings">
+        <div class="titlebar"><span class="appicon"></span><span>Cài đặt</span><span class="wincontrols"><span class="x"></span></span></div>
+        <div class="app">
+          <h2>Cài đặt</h2>
+          <div class="group">Màu sắc</div>
+          <div class="setting"><label>Giao diện</label><div class="seg"><span class="on">Sáng</span><span>Tối</span><span>Theo Windows</span></div></div>
+          <div class="setting"><label>Tông nền</label><div class="seg"><span class="on">Trung tính</span><span>Lạnh</span><span>Ấm</span></div></div>
+          <div class="setting"><label>Màu nhấn</label><div class="swatches"><span class="sw on" style="background:#2f62c8"></span><span class="sw" style="background:#0e7c72"></span><span class="sw" style="background:#2f7d3a"></span><span class="sw" style="background:#6b4fc8"></span><span class="sw" style="background:#c1356b"></span><span class="sw" style="background:#b5492b"></span><span class="sw" style="background:#b8680c"></span><span class="sw" style="background:#3c4048"></span><span class="sw plus">+</span></div></div>
+          <div class="group" style="margin-top:11px">Nút</div>
+          <div class="setting"><label>Hình dạng</label><div class="seg"><span>Vuông</span><span class="on">Bo góc</span><span>Tròn</span></div></div>
+          <div class="setting"><label>Nút chính</label><div class="seg"><span class="on">Màu mực</span><span>Màu nhấn</span><span>Viền</span></div></div>
+          <div class="group" style="margin-top:11px">Chung</div>
+          <div class="setting"><label>Ngôn ngữ</label><div class="seg"><span class="on">Tiếng Việt</span><span>English</span></div></div>
+          <div class="setting"><label>Kích thước</label><div class="seg"><span>Nhỏ</span><span class="on">Vừa</span><span>Lớn</span><span>Rất lớn</span></div></div>
+          <div class="donebtn">Xong</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

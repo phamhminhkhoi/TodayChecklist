@@ -1,0 +1,36 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Release (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish
+        run: dotnet publish TodayChecklist.csproj -c Release -o publish
+
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path publish\* -DestinationPath "TodayChecklist-$env:GITHUB_REF_NAME-win.zip"
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$env:GITHUB_REF_NAME" "TodayChecklist-$env:GITHUB_REF_NAME-win.zip" --title "TodayChecklist $env:GITHUB_REF_NAME" --notes "Yêu cầu: Windows 10/11 + .NET 10 Desktop Runtime. Tải file zip, giải nén, chạy TodayChecklist.exe. Hướng dẫn: https://github.com/phamhminhkhoi/TodayChecklist/blob/main/docs/USAGE.md" --latest

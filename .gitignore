@@ -1,0 +1,32 @@
+# Build output
+bin/
+obj/
+publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# IDE
+.vs/
+.idea/
+.vscode/
+*.swp
+*~
+
+# Local data (never commit the checklist DB or backups)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+backups/
+
+# Logs / crash dumps
+*.log
+*.dmp
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
